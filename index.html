@@ -1,0 +1,604 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Serverless Online Exam</title>
+    <style>
+      :root {
+        --bg: #f4f7fb;
+        --card: #fff;
+        --text: #172033;
+        --muted: #657089;
+        --blue: #245ce8;
+        --border: #dce3ef;
+        --green: #15803d;
+        --green-bg: #dcfce7;
+        --red: #b91c1c;
+        --red-bg: #fee2e2;
+      }
+      * {
+        box-sizing: border-box;
+      }
+      body {
+        margin: 0;
+        background: var(--bg);
+        color: var(--text);
+        font:
+          16px/1.5 Inter,
+          system-ui,
+          -apple-system,
+          Segoe UI,
+          Roboto,
+          Arial,
+          sans-serif;
+      }
+      .page {
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        padding: 24px;
+      }
+      .shell {
+        width: min(900px, 100%);
+        background: var(--card);
+        border: 1px solid var(--border);
+        border-radius: 18px;
+        box-shadow: 0 16px 45px #1720330d;
+        overflow: hidden;
+      }
+      header {
+        padding: 24px 28px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+      }
+      .brand {
+        font-weight: 750;
+        font-size: 19px;
+      }
+      .sub {
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .content {
+        padding: 28px;
+      }
+      .hidden {
+        display: none !important;
+      }
+      .intro {
+        text-align: center;
+        padding: 24px 8px 30px;
+      }
+      .intro h1 {
+        font-size: 28px;
+        margin: 0 0 8px;
+      }
+      .intro p {
+        color: var(--muted);
+        margin: 0 0 22px;
+      }
+      .btn {
+        border: 0;
+        border-radius: 10px;
+        padding: 11px 18px;
+        font-weight: 650;
+        font-size: 15px;
+        cursor: pointer;
+        background: var(--blue);
+        color: white;
+      }
+      .btn:disabled {
+        opacity: 0.55;
+        cursor: not-allowed;
+      }
+      .btn.secondary {
+        background: #edf2ff;
+        color: #234fc7;
+      }
+      .meta {
+        display: flex;
+        justify-content: space-between;
+        gap: 12px;
+        align-items: center;
+        color: var(--muted);
+        font-size: 14px;
+      }
+      .progress {
+        height: 6px;
+        background: #e8edf6;
+        border-radius: 99px;
+        overflow: hidden;
+        margin: 16px 0 24px;
+      }
+      .progress span {
+        display: block;
+        height: 100%;
+        width: 0;
+        background: var(--blue);
+        transition: width 0.2s;
+      }
+      .question {
+        font-size: 23px;
+        font-weight: 700;
+        line-height: 1.35;
+        margin: 0 0 22px;
+      }
+      .options {
+        display: grid;
+        gap: 12px;
+      }
+      .option {
+        width: 100%;
+        text-align: left;
+        display: flex;
+        gap: 12px;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 15px;
+        background: white;
+        color: var(--text);
+        font-size: 16px;
+        cursor: pointer;
+        transition:
+          border-color 0.15s,
+          background 0.15s;
+      }
+      .option:hover:not(:disabled) {
+        border-color: #8daaf7;
+        background: #f8faff;
+      }
+      .option.selected {
+        border-color: var(--blue);
+        background: #eaf0ff;
+        box-shadow: 0 0 0 2px #245ce822;
+      }
+      .letter {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 30px;
+        border-radius: 8px;
+        display: grid;
+        place-items: center;
+        background: #f0f3f9;
+        color: #536078;
+        font-weight: 700;
+      }
+      .option.correct {
+        border-color: var(--green);
+        background: var(--green-bg);
+        color: #14532d;
+      }
+      .option.correct .letter {
+        background: var(--green);
+        color: white;
+      }
+      .option.wrong {
+        border-color: var(--red);
+        background: var(--red-bg);
+        color: #7f1d1d;
+      }
+      .option.wrong .letter {
+        background: var(--red);
+        color: white;
+      }
+      .feedback {
+        margin-top: 16px;
+        padding: 13px 15px;
+        border-radius: 10px;
+        font-weight: 600;
+      }
+      .feedback.good {
+        background: var(--green-bg);
+        color: #14532d;
+      }
+      .feedback.bad {
+        background: var(--red-bg);
+        color: #7f1d1d;
+      }
+      .short-answer {
+        width: 100%;
+        min-height: 105px;
+        resize: vertical;
+        padding: 13px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        font: inherit;
+      }
+      .short-answer:focus {
+        outline: 2px solid #b7c9ff;
+        border-color: var(--blue);
+      }
+      .actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 12px;
+        margin-top: 26px;
+      }
+      .action-right {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+      }
+      .error {
+        padding: 12px 14px;
+        background: var(--red-bg);
+        color: #7f1d1d;
+        border-radius: 10px;
+        margin-top: 16px;
+      }
+      .summary {
+        text-align: center;
+        padding: 24px 0;
+      }
+      .score {
+        font-size: 44px;
+        font-weight: 800;
+        color: var(--blue);
+        margin: 8px;
+      }
+      .small {
+        font-size: 13px;
+        color: var(--muted);
+      }
+      @media (max-width: 600px) {
+        .page {
+          padding: 10px;
+        }
+        .content {
+          padding: 20px;
+        }
+        header {
+          padding: 18px 20px;
+        }
+        .question {
+          font-size: 20px;
+        }
+        .intro h1 {
+          font-size: 24px;
+        }
+        .actions {
+          align-items: stretch;
+          flex-direction: column;
+        }
+        .action-right {
+          flex-wrap: wrap;
+        }
+        .actions .btn {
+          flex: 1;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page">
+      <div class="shell">
+        <header>
+          <div>
+            <div class="brand">Serverless Online Exam</div>
+            <div class="sub">AWS Fundamentals</div>
+          </div>
+          <div class="sub" id="studentLabel">Student: Guest</div>
+        </header>
+        <main class="content">
+          <section id="startScreen" class="intro">
+            <h1>AWS Fundamentals</h1>
+            <p>5 questions · 5 minutes</p>
+            <button class="btn" id="startBtn">Start exam</button>
+            <div id="startError" class="error hidden"></div>
+          </section>
+          <section id="quizScreen" class="hidden">
+            <div class="meta">
+              <span id="questionCount">Question 1 of 3</span
+              ><span id="answeredCount">0 answered</span>
+            </div>
+            <div class="progress"><span id="progressBar"></span></div>
+            <h2 class="question" id="questionText"></h2>
+            <div id="answerArea" class="options"></div>
+            <div id="feedback" aria-live="polite"></div>
+            <div id="questionError" class="error hidden"></div>
+            <div class="actions">
+              <div class="action-right">
+                <button class="btn" id="submitAnswerBtn" disabled>
+                  Submit answer</button
+                ><button class="btn hidden" id="nextBtn" disabled>
+                  Next question</button
+                ><button class="btn hidden" id="finishBtn" disabled>
+                  End quiz
+                </button>
+              </div>
+            </div>
+          </section>
+          <section id="resultScreen" class="summary hidden">
+            <h1>Exam completed</h1>
+            <div class="score" id="finalScore">0 / 0</div>
+            <p id="finalMessage">Your result has been saved.</p>
+            <button class="btn secondary" id="restartBtn">Back to start</button>
+          </section>
+        </main>
+      </div>
+    </div>
+    <script>
+      const API_BASE =
+        "https://mqletghdif.execute-api.ap-southeast-2.amazonaws.com";
+      const EXAM_ID = "exam-abc-123";
+      // API Gateway route: POST /exams/{examId}/answer -> checkAnswer
+      const ANSWER_ENDPOINT = `${API_BASE}/exams/${EXAM_ID}/answer`;
+      const SUBMIT_ENDPOINT = `${API_BASE}/exams/${EXAM_ID}/submit`;
+      const USER_NAME = "student1";
+
+      let questions = [],
+        current = 0,
+        answers = {},
+        checked = {},
+        checking = false;
+      const $ = (id) => document.getElementById(id);
+      const startScreen = $("startScreen"),
+        quizScreen = $("quizScreen"),
+        resultScreen = $("resultScreen");
+
+      function showError(id, msg) {
+        $(id).textContent = msg;
+        $(id).classList.remove("hidden");
+      }
+      function hideError(id) {
+        $(id).textContent = "";
+        $(id).classList.add("hidden");
+      }
+      async function requestJson(url, options = {}) {
+        const response = await fetch(url, options);
+        const raw = await response.text();
+        let data = {};
+        try {
+          data = raw ? JSON.parse(raw) : {};
+        } catch {}
+        if (!response.ok)
+          throw new Error(data.error || `Request failed (${response.status})`);
+        return data;
+      }
+      async function startExam() {
+        hideError("startError");
+        $("startBtn").disabled = true;
+        $("startBtn").textContent = "Loading…";
+        try {
+          const data = await requestJson(
+            `${API_BASE}/exams/${EXAM_ID}/questions`,
+          );
+          questions = data.questions || [];
+          if (!questions.length)
+            throw new Error("No questions were returned by the API.");
+          current = 0;
+          answers = {};
+          checked = {};
+          startScreen.classList.add("hidden");
+          resultScreen.classList.add("hidden");
+          quizScreen.classList.remove("hidden");
+          renderQuestion();
+        } catch (e) {
+          showError(
+            "startError",
+            `${e.message}. Check the API URL and CORS settings.`,
+          );
+        } finally {
+          $("startBtn").disabled = false;
+          $("startBtn").textContent = "Start exam";
+        }
+      }
+      function renderQuestion() {
+        hideError("questionError");
+        $("feedback").innerHTML = "";
+        const q = questions[current];
+        $("questionCount").textContent =
+          `Question ${current + 1} of ${questions.length}`;
+        $("answeredCount").textContent =
+          `${Object.keys(checked).length} answered`;
+        $("progressBar").style.width =
+          `${((current + (checked[questions[current].qId] ? 1 : 0)) / questions.length) * 100}%`;
+        $("questionText").textContent = q.text;
+        const area = $("answerArea");
+        area.innerHTML = "";
+        const alreadyChecked = !!checked[q.qId];
+
+        if (q.type === "short") {
+          const ta = document.createElement("textarea");
+          ta.className = "short-answer";
+          ta.placeholder = "Type your answer here…";
+          ta.value = answers[q.qId]?.answerText || "";
+          ta.disabled = alreadyChecked;
+          ta.addEventListener("input", () => {
+            if (!alreadyChecked) {
+              answers[q.qId] = {
+                qId: q.qId,
+                type: "short",
+                answerText: ta.value,
+              };
+              $("submitAnswerBtn").disabled = !ta.value.trim();
+            }
+          });
+          area.appendChild(ta);
+        } else {
+          (q.options || []).forEach((option, index) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.className = "option";
+            b.disabled = alreadyChecked || checking;
+            const letter = document.createElement("span");
+            letter.className = "letter";
+            letter.textContent = String.fromCharCode(65 + index);
+            const label = document.createElement("span");
+            label.textContent = option;
+            b.append(letter, label);
+            if (alreadyChecked) {
+              if (index === checked[q.qId].correctAnswerIndex)
+                b.classList.add("correct");
+              if (
+                index === answers[q.qId]?.answerIndex &&
+                !checked[q.qId].correct
+              )
+                b.classList.add("wrong");
+            } else if (answers[q.qId]?.answerIndex === index)
+              b.classList.add("selected");
+            b.addEventListener("click", () => {
+              if (checked[q.qId] || checking) return;
+              answers[q.qId] = { qId: q.qId, type: q.type, answerIndex: index };
+              area
+                .querySelectorAll(".option")
+                .forEach((x) => x.classList.remove("selected"));
+              b.classList.add("selected");
+              $("submitAnswerBtn").disabled = false;
+            });
+            area.appendChild(b);
+          });
+        }
+
+        if (alreadyChecked) {
+          if (q.type === "short") showShortFeedback(q);
+          else showMcqFeedback(q);
+        }
+        $("submitAnswerBtn").classList.toggle("hidden", alreadyChecked);
+        $("submitAnswerBtn").disabled =
+          alreadyChecked ||
+          !answers[q.qId] ||
+          (q.type === "short" && !answers[q.qId]?.answerText?.trim()) ||
+          checking;
+        $("nextBtn").classList.toggle(
+          "hidden",
+          !alreadyChecked || current === questions.length - 1,
+        );
+        $("finishBtn").classList.toggle(
+          "hidden",
+          !alreadyChecked || current !== questions.length - 1,
+        );
+        $("nextBtn").disabled = !alreadyChecked || checking;
+        $("finishBtn").disabled =
+          Object.keys(checked).length !== questions.length || checking;
+      }
+
+      async function checkCurrentAnswer() {
+        const q = questions[current],
+          answer = answers[q.qId];
+        if (!answer) {
+          showError(
+            "questionError",
+            "Select an option or enter an answer first.",
+          );
+          return;
+        }
+        if (q.type === "short" && !answer.answerText?.trim()) {
+          showError("questionError", "Enter an answer before submitting.");
+          return;
+        }
+        checking = true;
+        hideError("questionError");
+        $("submitAnswerBtn").disabled = true;
+        $("submitAnswerBtn").textContent = "Checking…";
+        try {
+          // The answer-check endpoint must validate against DynamoDB and return:
+          // { correct: boolean, correctAnswerIndex?: number, correctAnswerText?: string }
+          const result = await requestJson(ANSWER_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              qId: q.qId,
+              type: q.type,
+              ...(q.type === "short"
+                ? { answerText: answer.answerText }
+                : { answerIndex: answer.answerIndex }),
+            }),
+          });
+          if (typeof result.correct !== "boolean")
+            throw new Error(
+              "Answer API response must contain correct (true/false).",
+            );
+          checked[q.qId] = result;
+          renderQuestion();
+        } catch (e) {
+          showError(
+            "questionError",
+            `Could not check this answer: ${e.message}. The POST /answer Lambda route must be configured.`,
+          );
+        } finally {
+          checking = false;
+          $("submitAnswerBtn").textContent = "Submit answer";
+          renderQuestion();
+        }
+      }
+
+      function showMcqFeedback(q) {
+        const r = checked[q.qId],
+          el = document.createElement("div");
+        el.className = `feedback ${r.correct ? "good" : "bad"}`;
+        if (r.correct) el.textContent = "Correct! Well done.";
+        else {
+          const correct = Number.isInteger(Number(r.correctAnswerIndex))
+            ? q.options[Number(r.correctAnswerIndex)]
+            : null;
+          el.textContent = correct
+            ? `Incorrect. Correct answer: ${correct}`
+            : "Incorrect. The answer-check API did not return the correct option.";
+        }
+        $("feedback").appendChild(el);
+      }
+      function showShortFeedback(q) {
+        const r = checked[q.qId],
+          el = document.createElement("div");
+        el.className = `feedback ${r.correct ? "good" : "bad"}`;
+        el.textContent = r.correct
+          ? "Correct! Well done."
+          : `Incorrect. Correct answer: ${r.correctAnswerText || "The answer-check API must return correctAnswerText."}`;
+        $("feedback").appendChild(el);
+      }
+      async function finishExam() {
+        $("finishBtn").disabled = true;
+        $("finishBtn").textContent = "Saving…";
+        hideError("questionError");
+        try {
+          const payload = {
+            userName: USER_NAME,
+            answers: questions.map((q) => answers[q.qId]).filter(Boolean),
+          };
+          const result = await requestJson(SUBMIT_ENDPOINT, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          quizScreen.classList.add("hidden");
+          resultScreen.classList.remove("hidden");
+          $("finalScore").textContent = `${result.score} / ${result.total}`;
+          $("finalMessage").textContent = "Your final result has been saved.";
+          $("progressBar").style.width = "100%";
+        } catch (e) {
+          showError(
+            "questionError",
+            `Could not save final result: ${e.message}`,
+          );
+        } finally {
+          $("finishBtn").disabled = false;
+          $("finishBtn").textContent = "End quiz";
+        }
+      }
+      $("startBtn").addEventListener("click", startExam);
+      $("submitAnswerBtn").addEventListener("click", checkCurrentAnswer);
+      $("nextBtn").addEventListener("click", () => {
+        if (current < questions.length - 1 && checked[questions[current].qId]) {
+          current++;
+          renderQuestion();
+        }
+      });
+      $("finishBtn").addEventListener("click", finishExam);
+      $("restartBtn").addEventListener("click", () => {
+        questions = [];
+        current = 0;
+        answers = {};
+        checked = {};
+        resultScreen.classList.add("hidden");
+        startScreen.classList.remove("hidden");
+      });
+    </script>
+  </body>
+</html>
