@@ -124,6 +124,3 @@ The frontend can be hosted separately on a static hosting platform to make the c
 
 This project can be distributed under the **MIT** License if an **MIT** license file is added and all included code is appropriately licensed.
 
----
-
-**Built as a cloud computing lab mini-project to demonstrate serverless application development using **AWS**.**
